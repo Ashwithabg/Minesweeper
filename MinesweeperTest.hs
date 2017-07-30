@@ -1,38 +1,63 @@
-module MinesweeperTest where
+module NewMinesweeperTest where
 
 import Test.Hspec
-import Minesweeper
-import Data.Map (Map)
-import qualified Data.Map as Map
+import NewMinesweeper
 
 main :: IO ()
 main = hspec $ do
-  describe "Minesweeper" $ do
+  describe "NewMinesweeper" $ do
   
-    it "returns initial grid Cell values" $
-      (gridStringList (initGrid 0) 0) `shouldBe` ["x"]
+    it "returns initial Board values" $
+      (initialBoard 3) `shouldMatchList` [[Mine 0 0 Closed, Cell 0 1 Closed, Cell 0 2 Closed],
+                                          [Cell 1 0 Closed, Mine 1 1 Closed, Cell 1 2 Closed],
+                                          [Cell 2 0 Closed, Cell 2 1 Closed, Cell 2 2 Closed]]
 
-    it "changes the state of the cell to open" $
-      gridStringList (newGrid (initGrid 1) (1, 0) "O") 1 `shouldBe` ["x","x","o","x"]
+    it "get string format of board" $
+      (boardStringFormat (initialBoard 3)) `shouldBe` "XXX\nXXX\nXXX\n"
 
-    it "changes the state of the cell to flag" $
-      gridStringList (newGrid (initGrid 1) (0, 0) "F") 1 `shouldBe` ["f","x","x","x"]
 
-    it "changes the state of the cell to Mine" $
-      gridStringList (newGrid (initGrid 1) (0, 0) "O") 1 `shouldBe` ["m","x","x","x"]
+    it "changes the state of cell to opened if user action is open " $
+      (applyAction (initialBoard 3) 0 1 0 Open) `shouldMatchList` [[Mine 0 0 Closed, Cell 0 1 Closed, Cell 0 2 Closed],
+                                            [Cell 1 0 Opened, Mine 1 1 Closed, Cell 1 2 Closed],
+                                            [Cell 2 0 Closed, Cell 2 1 Closed, Cell 2 2 Closed]]
 
-    it "gives the grid string format to display" $
-      gridStringFormat 2 ["x","x","x","x","x","x","x","x","x"] `shouldBe` "xxx\nxxx\nxxx\n"
 
-    it "does not change the status if the game is not won or lost" $ 
-      evaluateGameStatus (newGrid (initGrid 1) (0, 0) "F") 1 `shouldBe` "Continue"
+    it "changes the state of mine to blasted if user action is open " $
+      (applyAction (initialBoard 3) 0 0 0 Open) `shouldMatchList` [[Mine 0 0 Blasted, Cell 0 1 Closed, Cell 0 2 Closed],
+                                            [Cell 1 0 Closed, Mine 1 1 Closed, Cell 1 2 Closed],
+                                            [Cell 2 0 Closed, Cell 2 1 Closed, Cell 2 2 Closed]]
 
-    it "changes the status of the game when mine is opened" $
-      evaluateGameStatus (newGrid (initGrid 1) (0, 0) "O") 1 `shouldBe` "Oops, you stepped on a mine ! Game over !"
 
-    it "changes the status of the game when game is won" $ 
-      evaluateGameStatus (newGrid (initGrid 0) (0, 0) "F") 0 `shouldBe` "Wow, you cleared the minefield ! Game over"
+    it "changes the state of mine to flagged if user action is flag " $
+      (applyAction (initialBoard 3) 0 0 0 Flag) `shouldMatchList` [[Mine 0 0 Flagged, Cell 0 1 Closed, Cell 0 2 Closed],
+                                            [Cell 1 0 Closed, Mine 1 1 Closed, Cell 1 2 Closed],
+                                            [Cell 2 0 Closed, Cell 2 1 Closed, Cell 2 2 Closed]]
 
-    it "does not change the status if the flag is applied to non mined place" $ do
-      let grid = Map.fromList $ [(c, Cell Flag c) | x<- [0..1], y<-[0..1], let c = (x,y)]
-      evaluateGameStatus (newGrid grid (0, 0) "F") 1 `shouldBe` "Continue"
+
+    it "changes the state of cell to flagged if user action is flag " $
+      (applyAction (initialBoard 3) 0 0 1 Flag) `shouldMatchList` [[Mine 0 0 Closed, Cell 0 1 Flagged, Cell 0 2 Closed],
+                                            [Cell 1 0 Closed, Mine 1 1 Closed, Cell 1 2 Closed],
+                                            [Cell 2 0 Closed, Cell 2 1 Closed, Cell 2 2 Closed]]
+
+     
+    it "should return the string format of the updated board" $
+        (boardStringFormat (applyAction (initialBoard 3) 0 0 1 Flag)) `shouldBe` "XFX\nXXX\nXXX\n"
+
+
+    it "should return status of the game lost when user opens the mine" $
+        gamestatus ((applyAction (initialBoard 3) 0 0 0 Open)) `shouldBe` "Oops, you stepped on a mine ! Game over !"
+
+
+    it "should return status of the game Continue if the game not over" $
+        gamestatus ((applyAction (initialBoard 3) 0 1 0 Open)) `shouldBe` "Continue"
+
+
+    it "should return status of the game won when user opens the mine" $ do
+        let rows = [[Mine 0 0 Flagged, Cell 0 1 Opened, Cell 0 2 Opened],
+                    [Cell 1 0 Opened, Mine 1 1 Flagged, Cell 1 2 Opened],
+                    [Cell 2 0 Opened, Cell 2 1 Opened, Cell 2 2 Opened]]
+        gamestatus (rows) `shouldBe` "Wow, you cleared the minefield ! Game over" 
+
+
+
+

@@ -1,0 +1,1 @@
+run tests: runhaskell NewMinesweeperTest.hs
